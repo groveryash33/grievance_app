@@ -1,0 +1,15 @@
+# dart run package_rename --path="package_rename_config.yaml"
+package_rename_config:
+  android:
+    app_name: Grievance
+    package_name: com.grievance
+    override_old_package: # (Optional) (String) Use this to delete the old folder structure of MainActivity or to use the existing code with the new package name
+    lang: # (Optional) (String) The android development language {kotlin(default) or java}
+
+  ios:
+    app_name: Grievance # (String) The display name of the ios app
+    bundle_name: com.grievance # (String) The bundle name of the ios app
+    package_name: com.grievance # (String) The product bundle identifier of the ios app
+  web:
+    app_name: Grievance # (String) The title and display name of the web app and PWA
+    description: Grievance # (String) The description of the web app and PWA
