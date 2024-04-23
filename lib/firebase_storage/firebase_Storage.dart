@@ -8,13 +8,14 @@ FirebaseFirestore firestore = FirebaseFirestore.instance;
 CollectionReference users =
     FirebaseFirestore.instance.collection(collectionName);
 
-Future<void> addEntry(String grievanceName, Timestamp dateCreated,
+Future<void> addEntry(String grievanceEntryBy, Timestamp dateCreated,
     String grievanceTitle, String grievanceDescription, String greivanceType,String greivanceStatus) {
   CollectionReference<Map<String, dynamic>> users =
       FirebaseFirestore.instance.collection(collectionName);
 
   Map<String, dynamic> addTasksData = {
-    'grievanceName': grievanceName, // Stokes and Sons
+    'grievanceEntryBy':grievanceEntryBy,
+ ///   'grievanceName': grievanceName, // Stokes and Sons
     'dateCreated': dateCreated,
     'grievanceTitle': grievanceTitle,
     "greivanceType": greivanceType,

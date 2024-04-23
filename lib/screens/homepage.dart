@@ -95,7 +95,7 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
           backgroundColor: AppColors.backgroundColor,
           title: const Text(
             'Grievance',
-            style: TextStyle(fontSize: 22),
+            style: TextStyle(fontSize: 22, color: Colors.white),
           ),
           centerTitle: true,
           // pinned: true,
@@ -144,10 +144,11 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                   Navigator.of(context).pushReplacement(_routeToSignInScreen());
                 },
                 child: Container(
-                  margin: const EdgeInsets.only(right: 10, left: 10),
+                  margin: const EdgeInsets.only(right: 20, left: 10),
                   child: const Icon(
                     Icons.logout,
                     size: 30,
+                    color: Colors.white,
                   ),
                 ))
           ]),
@@ -175,25 +176,33 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // const Padding(
+                    //   padding: EdgeInsets.all(48.0),
+                    //   child: Text(
+                    //     "My Tickets",
+                    //     textAlign: TextAlign.center,
+                    //     style: TextStyle(fontSize: 22, color: Colors.white),
+                    //   ),
+                    // ),
                     const Text(
-                      "No Tasks yet !",
+                      "No grievance entry yet !",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontWeight: FontWeight.w700,
                           fontSize: 18),
                     ),
                     Container(
                       margin: const EdgeInsets.only(top: 22.0),
                       child: const Text(
-                        "Add your to-dos and keep track of them!",
+                        "Add your grievance entry and keep track of them!",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                            color: Colors.black,
+                            color: Colors.white,
                             fontWeight: FontWeight.w700,
                             fontSize: 18),
                       ),
-                    )
+                    ),
                   ],
                 ),
               );
@@ -209,11 +218,19 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "My Tickets",
+                    const Padding(
+                      padding: EdgeInsets.all(18.0),
+                      child: Text(
+                        "My Tickets",
+                        style: TextStyle(fontSize: 22, color: Colors.white),
+                      ),
                     ),
                     widget.user.email == adminEmail
-                        ? ListView.builder(
+                        ? ListView.separated(
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(
+                                  height: 10.0,
+                                ),
                             itemCount: docs.length,
                             shrinkWrap: true,
                             reverse: true,
@@ -236,11 +253,20 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
                                         child: Text(
-                                          "GrievanceTitle:  BCA - 2024",
+                                          "GrievanceId:${widget.user.uid}",
                                           style: TextStyle(
                                               fontWeight: FontWeight.w400,
                                               color: AppColors.backgroundColor,
                                               fontSize: 16.0),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                          "Student Name: ${getdata['grievanceEntryBy'].toString().isNotEmpty ? getdata['grievanceEntryBy'].toString() : ""}",
+                                          style: TextStyle(
+                                              color: AppColors.backgroundColor,
+                                              fontSize: 18),
                                         ),
                                       ),
                                       Padding(
@@ -301,7 +327,11 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                     ]),
                               );
                             })
-                        : ListView.builder(
+                        : ListView.separated(
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(
+                                  height: 10.0,
+                                ),
                             itemCount: docs.length,
                             shrinkWrap: true,
                             reverse: true,
@@ -315,76 +345,105 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                               userId = snapshot.data!.docs[elementindex].id;
                               var status = getdata["greivanceStatus"] ?? "Open";
 
-                              return ListTile(
-                                // leading: Checkbox(
-                                //   activeColor: AppColors.backgroundColor,
-                                //   checkColor: AppColors.whiteColor,
-                                //   shape: const CircleBorder(),
-                                //   value: getdata["isCompleted"],
-                                //   onChanged: (value) {
-                                //     setState(() {
-                                //       completedTasks = value!;
-                                //     });
-                                //     updateTask(
-                                //         snapshot.data!.docs[elementindex].id,
-                                //         completedTasks);
-                                //   },
-                                // ),
-                                title: RichText(
-                                    text: TextSpan(children: <InlineSpan>[
-                                  TextSpan(
-                                    text: getdata['grievanceTitle']
-                                            .toString()
-                                            .isNotEmpty
-                                        ? getdata['grievanceTitle'].toString()
-                                        : "",
-                                    style: TextStyle(
-                                        color: AppColors.backgroundColor,
-                                        fontSize: 18),
-                                  ),
-                                  const WidgetSpan(child: SizedBox(width: 10)),
-                                  TextSpan(
-                                    text: getdata['greivanceStatus']
-                                            .toString()
-                                            .isNotEmpty
-                                        ? getdata['greivanceStatus'].toString()
-                                        : "",
-                                    style: const TextStyle(
-                                        color: Colors.green, fontSize: 18),
-                                  )
-                                ])),
-                                subtitle: Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    formattedDateTime ?? "",
-                                    // style: TextStyle(
-                                    //     fontWeight: FontWeight.w400,
-                                    //     color: AppColors.backgroundColor,
-                                    //     fontSize: 16.0),
-                                  ),
-                                ),
-                                trailing: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      deleteTasks(
-                                          snapshot.data!.docs[elementindex].id);
-                                    });
-
-                                    // Then show a snackbar.
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                            backgroundColor:
-                                                AppColors.backgroundColor,
-                                            content: Text(
-                                              '${getdata['grievanceTitle'].toString()} has been successfully deleted',
+                              return Container(
+                                decoration: BoxDecoration(
+                                    border: Border.all(
+                                        width: 1.0,
+                                        color: AppColors.whiteColor)),
+                                child: Container(
+                                  margin: const EdgeInsets.all(12.0),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              "Title: ${getdata['grievanceTitle'].toString().isNotEmpty ? getdata['grievanceTitle'].toString() : ""}",
                                               style: TextStyle(
                                                   color: AppColors.whiteColor,
-                                                  fontSize: 18.0),
-                                            )));
-                                  },
-                                  child: const Icon(
-                                    Icons.delete,
-                                    size: 30.0,
+                                                  fontSize: 18),
+                                            ),
+                                          ),
+                                          GestureDetector(
+                                            onTap: () {
+                                              setState(() {
+                                                deleteTasks(snapshot.data!
+                                                    .docs[elementindex].id);
+                                              });
+
+                                              // Then show a snackbar.
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(SnackBar(
+                                                      backgroundColor: AppColors
+                                                          .backgroundColor,
+                                                      content: Text(
+                                                        '${getdata['grievanceTitle'].toString()} has been successfully deleted',
+                                                        style: TextStyle(
+                                                            color: AppColors
+                                                                .whiteColor,
+                                                            fontSize: 18.0),
+                                                      )));
+                                            },
+                                            child: const Icon(
+                                              Icons.delete,
+                                              size: 30.0,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: RichText(
+                                            text:
+                                                TextSpan(children: <InlineSpan>[
+                                          TextSpan(
+                                            text: "Status",
+                                            style: TextStyle(
+                                                color: AppColors.whiteColor,
+                                                fontSize: 18),
+                                          ),
+                                          const WidgetSpan(
+                                              child: SizedBox(width: 10)),
+                                          TextSpan(
+                                            text: getdata['greivanceStatus']
+                                                    .toString()
+                                                    .isNotEmpty
+                                                ? getdata['greivanceStatus']
+                                                    .toString()
+                                                : "",
+                                            style: const TextStyle(
+                                                color: Colors.green,
+                                                fontSize: 18),
+                                          )
+                                        ])),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                          "Description: ${getdata['grievanceDescription'].toString().isNotEmpty ? getdata['grievanceDescription'].toString() : ""}",
+                                          style: TextStyle(
+                                              color: AppColors.whiteColor,
+                                              fontSize: 18),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(
+                                          "Date : $formattedDateTime" ?? "",
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w400,
+                                              color: AppColors.whiteColor,
+                                              fontSize: 16.0),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );
@@ -402,11 +461,22 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                   context: context,
                   builder: (BuildContext context) {
                     return AlertDialog(
-                      title: const Text('Form Validation'),
+                      title: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          const Text('Add Grievance Entry'),
+                          IconButton(
+                              onPressed: () {},
+                              icon: Icon(
+                                Icons.close,
+                                color: AppColors.backgroundColor,
+                                size: 30,
+                              ))
+                        ],
+                      ),
                       content: Form(
                         key: _formKey,
-                        child: SizedBox(
-                          height: 350,
+                        child: SingleChildScrollView(
                           child: Column(
                             children: <Widget>[
                               // DropdownButton<String>(
@@ -467,26 +537,30 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                 },
                               ),
                               const SizedBox(height: 20),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  if (_formKey.currentState!.validate()) {
-                                    _formKey.currentState!.save();
-                                    // Perform any action with the validated input
-                                    print('_grievanceTitle: $grievanceTitle');
-                                    print(
-                                        '_grievanceDescription: $grievanceDescription');
-                                    await addEntry(
-                                        grievanceTitle,
-                                        Timestamp.now(),
-                                        grievanceTitle,
-                                        grievanceDescription,
-                                        "Food",
-                                        "Open");
-                                    Navigator.of(context)
-                                        .pop(); // Close the dialog
-                                  }
-                                },
-                                child: const Text('Submit'),
+                              SizedBox(
+                                width: MediaQuery.of(context).size.width,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    if (_formKey.currentState!.validate()) {
+                                      _formKey.currentState!.save();
+                                      // Perform any action with the validated input
+                                      print('_grievanceTitle: $grievanceTitle');
+                                      print(
+                                          '_grievanceDescription: $grievanceDescription');
+                                      await addEntry(
+                                          widget.user.displayName ?? "",
+                                          //   grievanceTitle,
+                                          Timestamp.now(),
+                                          grievanceTitle,
+                                          grievanceDescription,
+                                          "Food",
+                                          "Open");
+                                      Navigator.of(context)
+                                          .pop(); // Close the dialog
+                                    }
+                                  },
+                                  child: const Text('Submit'),
+                                ),
                               ),
                             ],
                           ),
@@ -496,10 +570,12 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                   },
                 );
               },
-              child: const Icon(
+              child: Icon(
                 Icons.add,
                 size: 20,
-                color: Colors.white,
+                color: widget.user.email != adminEmail
+                    ? AppColors.backgroundColor
+                    : Colors.white,
               )),
     );
   }
