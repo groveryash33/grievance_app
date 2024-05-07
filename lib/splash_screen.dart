@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:grievance_app/screens/signup.dart';
 import 'constants/custom_color.dart';
 import 'firebase_storage/firebase_auth.dart';
 import 'screens/homepage.dart';
@@ -34,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        "Welcome to Grievance App",
+                        "Welcome to Bucket App",
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             color: AppColors.whiteColor, fontSize: 20.0),
@@ -43,7 +44,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         height: 35.0,
                       ),
                       Text(
-                        'Your Feedback, Our Action!!',
+                        'Organize Your Life, One Task at a Time with Bucket !',
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                         maxLines: 3,
@@ -75,7 +76,77 @@ class _SplashScreenState extends State<SplashScreen> {
                         },
                       ),
                       const SizedBox(
+                        height: 25.0,
+                      ),
+                      Text(
+                        "or",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: AppColors.whiteColor, fontSize: 20.0),
+                      ),
+                      const SizedBox(
+                        height: 25.0,
+                      ),
+                      OutlinedButton(
+                        style: ButtonStyle(
+                          backgroundColor:
+                              MaterialStateProperty.all(AppColors.whiteColor),
+                          shape: MaterialStateProperty.all(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(40),
+                            ),
+                          ),
+                        ),
+                        onPressed: () async {
+                          Navigator.of(context).push(MaterialPageRoute(
+                              builder: ((context) => SignupPage())));
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Padding(
+                                padding: EdgeInsets.all(10),
+                                child: Text(
+                                  'Sign up',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: AppColors.backgroundColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(
                         height: 55.0,
+                      ),
+                      Text.rich(
+                        TextSpan(
+                          text: 'Made by ',
+                          style: TextStyle(
+                              fontSize: 20, color: AppColors.whiteColor),
+                          children: [
+                            TextSpan(
+                              text:
+                                  'Yash Grover', // Replace with the desired name
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.whiteColor,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  // _launchURL(
+                                  //     'https://in.linkedin.com/in/anikit-grover'); // Replace with your URL
+                                },
+                            ),
+                          ],
+                        ),
                       ),
                     ]))));
   }
