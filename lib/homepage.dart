@@ -1,17 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:grievance_app/authentication/authentication.dart';
 import 'package:intl/intl.dart';
 
 import '../constants/custom_color.dart';
 import '../firebase_storage/firebase_Storage.dart';
+import '../authentication/authentication.dart';
 import '../splash_screen.dart';
 
 class GriveanceHomepage extends StatefulWidget {
-  User user;
+  final User user;
   static const String grivencehomepage = "TodoBucketHomepage";
-  GriveanceHomepage({super.key, required this.user});
+  const GriveanceHomepage({super.key, required this.user});
 
   @override
   State<GriveanceHomepage> createState() => _GriveanceHomepageState();
@@ -19,6 +19,9 @@ class GriveanceHomepage extends StatefulWidget {
 
 class _GriveanceHomepageState extends State<GriveanceHomepage> {
   late bool _isSigningOut = false;
+  
+  // Hardcoded collection name for StreamBuilder
+  final String collectionName = 'My Grievance'; 
 
   Route _routeToSignInScreen() {
     return PageRouteBuilder(
@@ -40,7 +43,6 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
     );
   }
 
-  //// datetime format
   String formatDateTime(Timestamp timestamp) {
     DateTime dateTime = timestamp.toDate();
     String day = DateFormat('d').format(dateTime);
@@ -68,27 +70,29 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
     }
   }
 
-  String? userId = "";
-
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   String grievanceTitle = '';
   String grievanceDescription = '';
 
-  // List of dropdown items
-  List<String> dropdownItems = [
-    'Hostel',
-    'Food',
-    'Counselling',
-    'Certificate',
-  ];
-
   final String adminEmail = 'yashgrover8622@gmail.com';
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final bool _isExpanded = false;
+  
+  Stream<QuerySnapshot> getGrievanceStream() {
+    // 🛑 WARNING: This simple email check is insecure for a real application.
+    if (widget.user.email == adminEmail) {
+      // Admin gets ALL grievances
+      return FirebaseFirestore.instance.collection(collectionName).snapshots();
+    } else {
+      // Regular user gets ONLY THEIR OWN grievances filtered by userId
+      return FirebaseFirestore.instance
+          .collection(collectionName)
+          .where('userId', isEqualTo: widget.user.uid) // Filter by UID
+          .snapshots();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    String selectedItem = dropdownItems.first;
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
@@ -98,9 +102,6 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
             style: TextStyle(fontSize: 22, color: Colors.white),
           ),
           centerTitle: true,
-          // pinned: true,
-          // floating: true,
-
           actions: [
             widget.user.photoURL != null
                 ? Padding(
@@ -153,15 +154,11 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                 ))
           ]),
       body: StreamBuilder(
-          stream: FirebaseFirestore.instance
-              .collection('/My Grievance/')
-              // .where(widget.user.email.toString(),
-              //     isEqualTo: "yashgrover8622@gmail.com")
-              .snapshots(),
+          stream: getGrievanceStream(),
           builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
             if (snapshot.hasError) {
               return Center(
-                child: Text('Error: ${snapshot.error}'),
+                child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
               );
             }
 
@@ -178,16 +175,8 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // const Padding(
-                    //   padding: EdgeInsets.all(48.0),
-                    //   child: Text(
-                    //     "My Tickets",
-                    //     textAlign: TextAlign.center,
-                    //     style: TextStyle(fontSize: 22, color: Colors.white),
-                    //   ),
-                    // ),
                     const Text(
-                      "No grievance entry yet !",
+                      "No grievance entry yet!",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           color: Colors.white,
@@ -210,7 +199,6 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
               );
             }
 
-            // Here you can safely access snapshot.data!
             final List<DocumentSnapshot> docs = snapshot.data!.docs;
 
             {
@@ -244,10 +232,9 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                 String formattedDateTime =
                                     formatDateTime(timestamp);
 
-                                userId = snapshot.data!.docs[elementindex].id;
                                 var status =
                                     getdata["greivanceStatus"] ?? "Open";
-
+                                    
                                 return Card(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.start,
@@ -257,7 +244,7 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
                                         child: Text(
-                                          "GrievanceId:${widget.user.uid}:   ",
+                                          "Grievance ID: ${docs[elementindex].id}", // Correctly display Document ID
                                           style: TextStyle(
                                             fontWeight: FontWeight.w500,
                                             color: AppColors.backgroundColor,
@@ -268,8 +255,7 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
                                         child: Text(
-                                          "Student Name: ${widget.user.displayName}" ??
-                                              "",
+                                          "Student Name: ${getdata['userName'] ?? widget.user.displayName ?? ''}", // Use stored name or fallback
                                           style: TextStyle(
                                             color: AppColors.backgroundColor,
                                             fontWeight: FontWeight.w500,
@@ -283,7 +269,7 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                           text: TextSpan(
                                             children: <InlineSpan>[
                                               TextSpan(
-                                                text: "Status",
+                                                text: "Status: ",
                                                 style: TextStyle(
                                                   color:
                                                       AppColors.backgroundColor,
@@ -291,15 +277,12 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                                   fontSize: 18,
                                                 ),
                                               ),
-                                              const WidgetSpan(
-                                                child: SizedBox(width: 10),
-                                              ),
                                               TextSpan(
                                                 text: getdata[
                                                         'greivanceStatus'] ??
                                                     "",
-                                                style: const TextStyle(
-                                                  color: Colors.green,
+                                                style: TextStyle(
+                                                  color: status == "Completed" ? Colors.green : Colors.orange, // Visual cue for status
                                                   fontWeight: FontWeight.w500,
                                                   fontSize: 18,
                                                 ),
@@ -311,7 +294,7 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                       Padding(
                                         padding: const EdgeInsets.all(8.0),
                                         child: Text(
-                                          "Date : $formattedDateTime" ?? "",
+                                          "Date : $formattedDateTime",
                                           style: TextStyle(
                                               fontWeight: FontWeight.w500,
                                               color: AppColors.backgroundColor,
@@ -345,8 +328,7 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                             MainAxisAlignment.center,
                                         children: [
                                           ElevatedButton(
-                                            onPressed: () {
-                                              // Mark grievance as completed
+                                            onPressed: status == "Completed" ? null : () { // Disable if already completed
                                               markAsCompleted(
                                                   docs[elementindex].id);
                                             },
@@ -356,7 +338,6 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                           const SizedBox(width: 10),
                                           ElevatedButton(
                                             onPressed: () {
-                                              // Delete grievance entry
                                               deleteGrievanceEntry(
                                                   docs[elementindex].id);
                                             },
@@ -364,121 +345,12 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                           ),
                                         ],
                                       ),
+                                      const SizedBox(height: 8.0),
                                     ],
                                   ),
                                 );
                               },
                             )
-                          // ListView.separated(
-                          //     separatorBuilder: (context, index) =>
-                          //         const SizedBox(
-                          //           height: 10.0,
-                          //         ),
-                          //     itemCount: docs.length,
-                          //     shrinkWrap: true,
-                          //     reverse: true,
-                          //     physics: const ClampingScrollPhysics(),
-                          //     itemBuilder: (context, elementindex) {
-                          //       var getdata = docs[elementindex].data() as Map;
-                          //       Timestamp timestamp = getdata['dateCreated'];
-                          //       String formattedDateTime =
-                          //           formatDateTime(timestamp);
-
-                          //       userId = snapshot.data!.docs[elementindex].id;
-                          //       var status =
-                          //           getdata["greivanceStatus"] ?? "Open";
-
-                          //       return Card(
-                          //         child: Column(
-                          //             mainAxisAlignment:
-                          //                 MainAxisAlignment.start,
-                          //             crossAxisAlignment:
-                          //                 CrossAxisAlignment.start,
-                          //             children: [
-                          //               Padding(
-                          //                 padding: const EdgeInsets.all(8.0),
-                          //                 child: Text(
-                          //                   "GrievanceId:${widget.user.uid}:   ",
-                          //                   style: TextStyle(
-                          //                       fontWeight: FontWeight.w400,
-                          //                       color:
-                          //                           AppColors.backgroundColor,
-                          //                       fontSize: 16.0),
-                          //                 ),
-                          //               ),
-                          //               Padding(
-                          //                 padding: const EdgeInsets.all(8.0),
-                          //                 child: Text(
-                          //                   "Student Name: ${getdata['grievanceEntryBy'].toString().isNotEmpty ? getdata['grievanceEntryBy'].toString() : ""}",
-                          //                   style: TextStyle(
-                          //                       color:
-                          //                           AppColors.backgroundColor,
-                          //                       fontSize: 18),
-                          //                 ),
-                          //               ),
-                          //               Padding(
-                          //                 padding: const EdgeInsets.all(8.0),
-                          //                 child: RichText(
-                          //                     text: TextSpan(
-                          //                         children: <InlineSpan>[
-                          //                       TextSpan(
-                          //                         text: "Status",
-                          //                         style: TextStyle(
-                          //                             color: AppColors
-                          //                                 .backgroundColor,
-                          //                             fontSize: 18),
-                          //                       ),
-                          //                       const WidgetSpan(
-                          //                           child: SizedBox(width: 10)),
-                          //                       TextSpan(
-                          //                         text: getdata[
-                          //                                     'greivanceStatus']
-                          //                                 .toString()
-                          //                                 .isNotEmpty
-                          //                             ? getdata[
-                          //                                     'greivanceStatus']
-                          //                                 .toString()
-                          //                             : "",
-                          //                         style: const TextStyle(
-                          //                             color: Colors.green,
-                          //                             fontSize: 18),
-                          //                       )
-                          //                     ])),
-                          //               ),
-                          //               Padding(
-                          //                 padding: const EdgeInsets.all(8.0),
-                          //                 child: Text(
-                          //                   "Date : $formattedDateTime" ?? "",
-                          //                   // style: TextStyle(
-                          //                   //     fontWeight: FontWeight.w400,
-                          //                   //     color: AppColors.backgroundColor,
-                          //                   //     fontSize: 16.0),
-                          //                 ),
-                          //               ),
-                          //               Padding(
-                          //                 padding: const EdgeInsets.all(8.0),
-                          //                 child: Text(
-                          //                   "Title: ${getdata['grievanceTitle'].toString().isNotEmpty ? getdata['grievanceTitle'].toString() : ""}",
-                          //                   style: TextStyle(
-                          //                       color:
-                          //                           AppColors.backgroundColor,
-                          //                       fontSize: 18),
-                          //                 ),
-                          //               ),
-                          //               Padding(
-                          //                 padding: const EdgeInsets.all(8.0),
-                          //                 child: Text(
-                          //                   "Description: ${getdata['grievanceDescription'].toString().isNotEmpty ? getdata['grievanceDescription'].toString() : ""}",
-                          //                   style: TextStyle(
-                          //                       color:
-                          //                           AppColors.backgroundColor,
-                          //                       fontSize: 18),
-                          //                 ),
-                          //               )
-                          //             ]),
-                          //       );
-                          //     })
-
                           : ListView.separated(
                               separatorBuilder: (context, index) =>
                                   const SizedBox(
@@ -494,34 +366,20 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                 String formattedDateTime =
                                     formatDateTime(timestamp);
 
-                                userId = snapshot.data!.docs[elementindex].id;
                                 var status =
                                     getdata["greivanceStatus"] ?? "Open";
 
                                 return ExpansionTile(
-                                  trailing: _isExpanded
-                                      ? Icon(
-                                          Icons.keyboard_arrow_up,
-                                          size: 20,
-                                          color: Colors.white,
-                                        ) // Collapse icon
-                                      : Icon(Icons.keyboard_arrow_down,
-                                          size: 20, color: Colors.white),
-                                  title: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          getdata['grievanceTitle'].toString().isNotEmpty ? getdata['grievanceTitle'].toString() : "",
-                                          style: TextStyle(
-                                            color: AppColors.whiteColor,
-                                            fontSize: 18,
-                                          ),
-                                        ),
+                                  // Removed trailing logic for _isExpanded as it was incorrect
+                                  title: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      getdata['grievanceTitle'].toString().isNotEmpty ? getdata['grievanceTitle'].toString() : "",
+                                      style: TextStyle(
+                                        color: AppColors.whiteColor,
+                                        fontSize: 18,
                                       ),
-                                    ],
+                                    ),
                                   ),
                                   children: [
                                     Container(
@@ -530,7 +388,6 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                             width: 1.0,
                                             color: AppColors.whiteColor),
                                       ),
-                                      //    margin: const EdgeInsets.all(12.0),
                                       child: Column(
                                         mainAxisAlignment:
                                             MainAxisAlignment.start,
@@ -543,15 +400,12 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                               text: TextSpan(
                                                 children: <InlineSpan>[
                                                   TextSpan(
-                                                    text: "Status",
+                                                    text: "Status: ",
                                                     style: TextStyle(
                                                       color:
                                                           AppColors.whiteColor,
                                                       fontSize: 18,
                                                     ),
-                                                  ),
-                                                  const WidgetSpan(
-                                                    child: SizedBox(width: 10),
                                                   ),
                                                   TextSpan(
                                                     text: getdata[
@@ -562,8 +416,8 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                                                 'greivanceStatus']
                                                             .toString()
                                                         : "",
-                                                    style: const TextStyle(
-                                                      color: Colors.green,
+                                                    style: TextStyle(
+                                                      color: status == "Completed" ? Colors.green : Colors.orange,
                                                       fontSize: 18,
                                                     ),
                                                   ),
@@ -584,7 +438,7 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                           Padding(
                                             padding: const EdgeInsets.all(8.0),
                                             child: Text(
-                                              "Date : $formattedDateTime" ?? "",
+                                              "Date : $formattedDateTime",
                                               style: TextStyle(
                                                 fontWeight: FontWeight.w400,
                                                 color: AppColors.whiteColor,
@@ -599,135 +453,6 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                 );
                               },
                             )
-
-                      // : ListView.separated(
-                      //     separatorBuilder: (context, index) =>
-                      //         const SizedBox(
-                      //           height: 10.0,
-                      //         ),
-                      //     itemCount: docs.length,
-                      //     shrinkWrap: true,
-                      //     reverse: true,
-                      //     physics: const ClampingScrollPhysics(),
-                      //     itemBuilder: (context, elementindex) {
-                      //       var getdata = docs[elementindex].data() as Map;
-                      //       Timestamp timestamp = getdata['dateCreated'];
-                      //       String formattedDateTime =
-                      //           formatDateTime(timestamp);
-
-                      //       userId = snapshot.data!.docs[elementindex].id;
-                      //       var status =
-                      //           getdata["greivanceStatus"] ?? "Open";
-
-                      //       return Container(
-                      //         decoration: BoxDecoration(
-                      //             border: Border.all(
-                      //                 width: 1.0,
-                      //                 color: AppColors.whiteColor)),
-                      //         child: Container(
-                      //           margin: const EdgeInsets.all(12.0),
-                      //           child: Column(
-                      //             mainAxisAlignment:
-                      //                 MainAxisAlignment.start,
-                      //             crossAxisAlignment:
-                      //                 CrossAxisAlignment.start,
-                      //             children: [
-                      //               Row(
-                      //                 mainAxisAlignment:
-                      //                     MainAxisAlignment.spaceBetween,
-                      //                 children: [
-                      //                   Padding(
-                      //                     padding:
-                      //                         const EdgeInsets.all(8.0),
-                      //                     child: Text(
-                      //                       "Title: ${getdata['grievanceTitle'].toString().isNotEmpty ? getdata['grievanceTitle'].toString() : ""}",
-                      //                       style: TextStyle(
-                      //                           color: AppColors.whiteColor,
-                      //                           fontSize: 18),
-                      //                     ),
-                      //                   ),
-                      //                   GestureDetector(
-                      //                     onTap: () {
-                      //                       setState(() {
-                      //                         deleteTasks(snapshot.data!
-                      //                             .docs[elementindex].id);
-                      //                       });
-
-                      //                       // Then show a snackbar.
-                      //                       ScaffoldMessenger.of(context)
-                      //                           .showSnackBar(SnackBar(
-                      //                               backgroundColor:
-                      //                                   AppColors
-                      //                                       .backgroundColor,
-                      //                               content: Text(
-                      //                                 '${getdata['grievanceTitle'].toString()} has been successfully deleted',
-                      //                                 style: TextStyle(
-                      //                                     color: AppColors
-                      //                                         .whiteColor,
-                      //                                     fontSize: 18.0),
-                      //                               )));
-                      //                     },
-                      //                     child: const Icon(
-                      //                       Icons.delete,
-                      //                       size: 30.0,
-                      //                       color: Colors.white,
-                      //                     ),
-                      //                   ),
-                      //                 ],
-                      //               ),
-                      //               Padding(
-                      //                 padding: const EdgeInsets.all(8.0),
-                      //                 child: RichText(
-                      //                     text: TextSpan(
-                      //                         children: <InlineSpan>[
-                      //                       TextSpan(
-                      //                         text: "Status",
-                      //                         style: TextStyle(
-                      //                             color:
-                      //                                 AppColors.whiteColor,
-                      //                             fontSize: 18),
-                      //                       ),
-                      //                       const WidgetSpan(
-                      //                           child: SizedBox(width: 10)),
-                      //                       TextSpan(
-                      //                         text: getdata[
-                      //                                     'greivanceStatus']
-                      //                                 .toString()
-                      //                                 .isNotEmpty
-                      //                             ? getdata[
-                      //                                     'greivanceStatus']
-                      //                                 .toString()
-                      //                             : "",
-                      //                         style: const TextStyle(
-                      //                             color: Colors.green,
-                      //                             fontSize: 18),
-                      //                       )
-                      //                     ])),
-                      //               ),
-                      //               Padding(
-                      //                 padding: const EdgeInsets.all(8.0),
-                      //                 child: Text(
-                      //                   "Description: ${getdata['grievanceDescription'].toString().isNotEmpty ? getdata['grievanceDescription'].toString() : ""}",
-                      //                   style: TextStyle(
-                      //                       color: AppColors.whiteColor,
-                      //                       fontSize: 18),
-                      //                 ),
-                      //               ),
-                      //               Padding(
-                      //                 padding: const EdgeInsets.all(8.0),
-                      //                 child: Text(
-                      //                   "Date : $formattedDateTime" ?? "",
-                      //                   style: TextStyle(
-                      //                       fontWeight: FontWeight.w400,
-                      //                       color: AppColors.whiteColor,
-                      //                       fontSize: 16.0),
-                      //                 ),
-                      //               ),
-                      //             ],
-                      //           ),
-                      //         ),
-                      //       );
-                      //     }),
                     ],
                   ),
                 ),
@@ -735,7 +460,7 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
             }
           }),
       floatingActionButton: widget.user.email == adminEmail
-          ? Container()
+          ? Container() // Admin does not see the FAB
           : FloatingActionButton(
               onPressed: () {
                 showDialog(
@@ -748,7 +473,7 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                           const Text('Add Grievance Entry'),
                           IconButton(
                               onPressed: () {
-                                Navigator.of(context).pop;
+                                Navigator.of(context).pop(); // Use pop()
                               },
                               icon: Icon(
                                 Icons.close,
@@ -762,32 +487,6 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                         child: SingleChildScrollView(
                           child: Column(
                             children: <Widget>[
-                              // DropdownButton<String>(
-                              //   value: selectedItem,
-                              //   icon: const Icon(Icons.arrow_downward),
-                              //   elevation: 16,
-                              //   style:
-                              //       const TextStyle(color: Colors.deepPurple),
-                              //   underline: Container(
-                              //     height: 2,
-                              //     color: Colors.deepPurpleAccent,
-                              //   ),
-                              //   onChanged: (String? value) {
-                              //     // This is called when the user selects an item.
-                              //     setState(() {
-                              //       selectedItem = value!;
-                              //     });
-                              //   },
-                              //   items: dropdownItems
-                              //       .map<DropdownMenuItem<String>>(
-                              //           (String value) {
-                              //     return DropdownMenuItem<String>(
-                              //       value: value,
-                              //       child: Text(value),
-                              //     );
-                              //   }).toList(),
-                              // ),
-                              // const SizedBox(height: 20),
                               TextFormField(
                                 decoration: const InputDecoration(
                                   labelText: 'Grievance Title',
@@ -826,20 +525,17 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
                                   onPressed: () async {
                                     if (_formKey.currentState!.validate()) {
                                       _formKey.currentState!.save();
-                                      // Perform any action with the validated input
-                                      print('_grievanceTitle: $grievanceTitle');
-                                      print(
-                                          '_grievanceDescription: $grievanceDescription');
+                                      
+                                      // Call updated addEntry with named parameters, including userId
                                       await addEntry(
-                                          widget.user.displayName ?? "",
-                                          //   grievanceTitle,
-                                          Timestamp.now(),
-                                          grievanceTitle,
-                                          grievanceDescription,
-                                          "Food",
-                                          "Open");
-                                      Navigator.of(context)
-                                          .pop(); // Close the dialog
+                                          userId: widget.user.uid,
+                                          grievanceName: widget.user.displayName ?? widget.user.email ?? "Anonymous User",
+                                          grievanceTitle: grievanceTitle,
+                                          grievanceDescription: grievanceDescription,
+                                          grievanceType: "Food", // Still hardcoded
+                                      ); 
+                                      
+                                      Navigator.of(context).pop(); // Close the dialog
                                     }
                                   },
                                   child: const Text('Submit'),
@@ -856,9 +552,7 @@ class _GriveanceHomepageState extends State<GriveanceHomepage> {
               child: Icon(
                 Icons.add,
                 size: 20,
-                color: widget.user.email != adminEmail
-                    ? AppColors.backgroundColor
-                    : Colors.white,
+                color: AppColors.backgroundColor,
               )),
     );
   }
