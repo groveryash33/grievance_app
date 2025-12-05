@@ -1,14 +1,27 @@
+// E:\gravience\grievance_app\android\build.gradle (Top-Level)
+
 buildscript {
-    ext.kotlin_version = '1.7.10'
+    // 1. SET COMPATIBLE KOTLIN VERSION (works with AGP 7.3.0)
+    ext.kotlin_version = '2.0.20'
     repositories {
         google()
         mavenCentral()
     }
-
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.0'
+        // 2. SET AGP TO A STABLE VERSION (7.3.0)
+        classpath 'com.android.tools.build:gradle:8.4.0'
+
+        // 3. Load the compatible Kotlin Gradle Plugin
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
+}
+
+plugins {
+    // IMPORTANT: Keep ONLY the declarative AGP version, must match the buildscript
+    id "com.android.application" version "8.4.0" apply false
+
+    // Ensure this line is ABSENT or commented out:
+    // id "org.jetbrains.kotlin.android" version "X.Y.Z" apply false
 }
 
 allprojects {
@@ -18,12 +31,9 @@ allprojects {
     }
 }
 
-rootProject.buildDir = '../build'
+rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(':app')
 }
 
 tasks.register("clean", Delete) {
